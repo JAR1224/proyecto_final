@@ -6,17 +6,20 @@
 #define SSID	"ARRIBA1"
 #define PWD		"L4c4s402"
 
+int sensorValue =0;
+float voltage =0.0;
 
-// the setup function runs once when you press reset or power the board
 void setup() {
   char	*ipAddress, ap[31];
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);
 
+
   /*
 	WiFi.reset(WIFI_RESET_HARD);
 	WiFi.begin(9600);
 	if (WiFi.join(SSID, PWD) == WIFI_ERR_OK) {
+    
 		ipAddress = WiFi.ip(WIFI_MODE_STA);
 		if (WiFi.isConnect(ap))
 			digitalWrite(7, 1);
@@ -51,13 +54,13 @@ void loop() {
 */
 
   digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
-  int sensorValue = analogRead(A0);
-  float voltage = sensorValue * (5.0 / 1023.0);
+  sensorValue = analogRead(A0);
+  voltage = sensorValue * (5.0 / 1023.0);
   Serial.println(voltage);
   delay(1000);                      // wait for a second
   digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
-  int sensorValue = analogRead(A0);
-  float voltage = sensorValue * (5.0 / 1023.0);
+  sensorValue = analogRead(A0);
+  voltage = sensorValue * (5.0 / 1023.0);
   Serial.println(voltage);
   delay(1000);                      // wait for a second
 }
