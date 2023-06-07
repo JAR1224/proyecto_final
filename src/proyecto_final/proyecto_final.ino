@@ -2,17 +2,18 @@
 #include "ESP8266.h"
 
 
-
+#define portmqtt 1883
 #define SSID	"ARRIBA1"
 #define PWD		"L4c4s402"
 
-void setup() {
-  pinMode(7, OUTPUT);
-  digitalWrite(7, 1);
-  delay(10000);
-  digitalWrite(7, 0);
-	char	*ipAddress, ap[31];
 
+// the setup function runs once when you press reset or power the board
+void setup() {
+  char	*ipAddress, ap[31];
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.begin(9600);
+
+  /*
 	WiFi.reset(WIFI_RESET_HARD);
 	WiFi.begin(9600);
 	if (WiFi.join(SSID, PWD) == WIFI_ERR_OK) {
@@ -23,10 +24,15 @@ void setup() {
 			digitalWrite(7, 0);
 	} else
 		while (1);
+*/
+
 }
 
+
 void loop() {
-	if (WiFi.connect((char *)"www.google.co.jp", 80) == WIFI_ERR_CONNECT) {
+
+  /*
+	if (WiFi.connect((char *)"iot.eie.ucr.ac.cr", portmqtt) == WIFI_ERR_CONNECT) {
 
 		if (WiFi.send((const uint8_t *)"GET / HTTP/1.1\r\n\r\n") == WIFI_ERR_OK) {
 			int16_t	c;
@@ -42,15 +48,16 @@ void loop() {
 		WiFi.close();
 
 	} else
-		digitalWrite(7, 0);
+*/
 
-	WiFi.disconnect();
-
-	while (1);
-  {
-    delay(1000);
-    digitalWrite(7, 0);
-    delay(1000);
-    digitalWrite(7, 1);
-  }
+  digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
+  int sensorValue = analogRead(A0);
+  float voltage = sensorValue * (5.0 / 1023.0);
+  Serial.println(voltage);
+  delay(1000);                      // wait for a second
+  digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
+  int sensorValue = analogRead(A0);
+  float voltage = sensorValue * (5.0 / 1023.0);
+  Serial.println(voltage);
+  delay(1000);                      // wait for a second
 }
