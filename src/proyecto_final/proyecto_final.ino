@@ -9,8 +9,16 @@
 #include <PubSubClient.h>
 #include "WiFiEsp.h"
 
-#define SSID	"ARRIBA1"
-#define PWD		"L4c4s402"
+//#define SSID	"ARRIBA1"
+//#define PWD		"L4c4s402"
+#define SSID	"Galaxy A5219B3"
+#define PWD		"qske8262"
+#define FAN_PIN 7
+#define PUMP_PIN 8
+#define FAN_INT 2
+#define PUMP_INT 3
+#define TEMP_PIN "A5"
+#define WATER_PIN "A0"
 
 
 int status = WL_IDLE_STATUS;     // the Wifi radio's status
@@ -21,17 +29,38 @@ PubSubClient client(espClient);
 char* mqtt_server = "iot.eie.ucr.ac.cr";
 int mqtt_port = 1883;
 
+//char* mqtt_server = "mqtt.eclipseprojects.io";
+//int mqtt_port = 1883;
+
 char* mqtt_clientID = "";
-char* mqtt_username = "19me1xr4k0tmae3tgbz4";
+//char* mqtt_username = "19me1xr4k0tmae3tgbz4";
 char* mqtt_password = "";
 
+char* mqtt_username = "3qwxx4qojgsndw0jch05";
+
+//char* mqtt_clientID = "";
+//char* mqtt_username = "";
+//char* mqtt_password = "";
+
 char* mqtt_publish_topic = "v1/devices/me/telemetry";
-char* mqtt_subscribe_topic = "v1/devices/me/attributes";
+char* mqtt_subscribe_topic = "v1/devices/me/telemetry";
+
+//char* mqtt_publish_topic = "$SYS/#";
+//char* mqtt_subscribe_topic = "$SYS/#";
 
 SoftwareSerial Serial1(5, 6);
 
 void setup() {
-  pinMode(2, OUTPUT);
+  pinMode(FAN_PIN, OUTPUT);
+  digitalWrite(FAN_PIN, 0);
+  //pinMode(PUMP_PIN, OUTPUT);
+  //digitalWrite(PUMP_PIN, 1);
+  //pinMode(FAN_INT, INPUT);
+  //pinMode(PUMP_INT, INPUT);
+
+  //attachInterrupt(digitalPinToInterrupt(FAN_INT), fan_toggle, HIGH);
+  //attachInterrupt(digitalPinToInterrupt(PUMP_INT), pump_toggle, HIGH);
+  
   // initialize the LED pin as an output:
   //pinMode(LED_PIN, OUTPUT);
   // initialize the pushbutton pin as an input:
@@ -41,6 +70,14 @@ void setup() {
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
   reconnect();
+}
+
+void fan_toggle() {
+  digitalWrite(FAN_PIN,!digitalRead(FAN_PIN));
+}
+
+void pump_toggle() {
+  digitalWrite(PUMP_PIN,!digitalRead(PUMP_PIN));
 }
 
 void setup_wifi() {
@@ -99,6 +136,7 @@ void reconnect() {
 
       //Subscribe
       client.subscribe(mqtt_subscribe_topic);
+      Serial.println("subscribed");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -112,25 +150,44 @@ void reconnect() {
 char msg[50];
 int val0 = 0;
 int val1 = 0;
+int fan_status = 0;
+int water_status = 0;
+int counter = 0;
 //int buttonState = 0;
 
 void loop() {
-  //if (!client.connected()) {
-  //  reconnect();
-  //}
+  if (counter++ > 20) {
+    counter = 0;
+    if (!client.connected()) {
+      reconnect();
+    }
+  }
   //client.loop();
-  val0 = analogRead(A0);  // read the input pin
-  //Serial.println(val);
-  val1 = analogRead(A1);  // read the input pin
-  delay(600);
+  val0 = analogRead(A5);  // read the input pin
+  val1 = analogRead(A0);  // read the input pin
+  water_status = val1 > 220 ? 1 : 0;
+  if (fan_status == 1) {
+    fan_status = val0 > 460 ? 0 : 1;
+  } else if (fan_status == 0) {
+    fan_status = val0 < 440 ? 1 : 0;
+  }
+  digitalWrite(FAN_PIN,fan_status == 1 ? 1 : 0);
+  //Serial.println(String(val0));
+  //Serial.println(String(val1));
+  val0 = ((-1*val0)+(740))/10;
+  val1 = (val1*100)/470;
+  //Serial.println(String(val0));
+  //Serial.println(String(val1));
+  delay(100);
   //if(!digitalRead(BUTTON_PIN) != buttonState){
+
   Serial.print(F("Publish message: "));
-  String msg_a = "{\"x\": " + String(val0) +", \"y\": " + String(val1) + ", \"z\": 0,\"bateria\": 0}";
+  String msg_a = "{\"x\": " + String(val0) + ", \"y\": " + String(val1) + ", \"z\": " + String(fan_status) + ", \"w\": " + String(water_status) + "}";
   msg_a.toCharArray(msg, 50);
   Serial.println(msg);
     //Publish
   client.publish(mqtt_publish_topic, msg); 
-  delay(600);
+  delay(100);
   //Serial.println(val);
   //digitalWrite(2, !digitalRead(2));
     //buttonState = !digitalRead(BUTTON_PIN);
@@ -138,106 +195,3 @@ void loop() {
 
 }
 
-/*
-//WiFiEspUdp espClient;
-
-WiFiEspClient espClient;
-PubSubClient client(espClient);
-
-char* mqtt_server = "iot.eie.ucr.ac.cr";
-int mqtt_port = 1883;
-
-char* mqtt_clientID = "";
-char* mqtt_username = "19me1xr4k0tmae3tgbz4";
-char* mqtt_password = "";
-
-char* mqtt_publish_topic = "v1/devices/me/telemetry";
-
-SoftwareSerial Serial1(5, 6);
-
-void setup() {
-  delay(4000);
-  Serial.begin(9600);
-  Serial1.begin(9600);
-  WiFi.init(&Serial1, true);
-  WiFi.begin(SSID, PWD);
-  client.setServer(mqtt_server, mqtt_port);
-  while (!client.connected()) {
-   client.connect(mqtt_clientID,mqtt_username,mqtt_password);
-  }
-}
-
-char msg[50];
-
-void loop() {
-
-  delay(1000);
-  //Serial.print("AT+GMR\n\r");
-  //Serial.println(WiFi.localIP());
-  //client.subscribe(mqtt_publish_topic);
-  
-  String msg_a = "{\"x\": 0, \"y\": 0, \"z\": 0,\"bateria\": 0}";
-  msg_a.toCharArray(msg, 50);
-  
-  client.publish(mqtt_publish_topic, msg);
-  
-  
-
-}
-*/
-
-
-
-/*
-//WiFiClient Wifi;
-
-void setup() {
-  pinMode(7, OUTPUT);
-  digitalWrite(7, 1);
-  delay(10000);
-  digitalWrite(7, 0);
-	char	*ipAddress, ap[31];
-
-	WiFi.reset(WIFI_RESET_HARD);
-	WiFi.begin(9600);
-	if (WiFi.join(SSID, PWD) == WIFI_ERR_OK) {
-		ipAddress = WiFi.ip(WIFI_MODE_STA);
-		if (WiFi.isConnect(ap))
-			digitalWrite(7, 1);
-		else
-			digitalWrite(7, 0);
-	} else
-		while (1);
-}
-
-void loop() {
-	if (WiFi.connect((char *)"www.google.co.jp", 80) == WIFI_ERR_CONNECT) {
-
-		if (WiFi.send((const uint8_t *)"GET / HTTP/1.1\r\n\r\n") == WIFI_ERR_OK) {
-			int16_t	c;
-			uint16_t len = WiFi.listen(10000UL);
-			while (len)
-				if ((c = WiFi.read()) > 0) {
-					digitalWrite(7, 1);
-					len--;
-				}
-		} else
-			digitalWrite(7, 0);
-
-		WiFi.close();
-
-	} else
-		digitalWrite(7, 0);
-
-	WiFi.disconnect();
-
-	while (1);
-  {
-    delay(1000);
-    digitalWrite(7, 0);
-    delay(1000);
-    digitalWrite(7, 1);
-  }
-}
-
-*/
